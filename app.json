@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "habitos-avanzados",
-    "slug": "habitos-avanzados",
+    "slug": "habitflow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -29,6 +29,13 @@
     "plugins": [
       "expo-router",
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "026bb341-b8e4-4224-a273-dec606bb8cc4"
+      }
+    },
+    "owner": "eorono"
   }
 }
