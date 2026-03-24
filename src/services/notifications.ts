@@ -1,56 +1,65 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Habit } from '../types/habit';
 
-// Configuración base de notificaciones (cómo se muestran cuando la app está en primer plano)
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// expo-notifications no es compatible con Expo Go en SDK 53+.
+// Toda la funcionalidad se desactiva gracefully para evitar crashes.
+let Notifications: typeof import('expo-notifications') | null = null;
 
-export async function requestNotificationPermissions() {
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
+try {
+  Notifications = require('expo-notifications');
+  Notifications!.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (e) {
+  console.warn('[Notifications] expo-notifications no disponible en este entorno (Expo Go). Las notificaciones están desactivadas.');
+}
 
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
+export async function requestNotificationPermissions(): Promise<boolean> {
+  if (!Notifications) return false;
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
 
-  if (finalStatus !== 'granted') {
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') return false;
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('habitflow-reminders', {
+        name: 'Recordatorios de Hábitos',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#3b82f6',
+      });
+    }
+
+    return true;
+  } catch (e) {
+    console.warn('[Notifications] Error al solicitar permisos:', e);
     return false;
   }
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('habitflow-reminders', {
-      name: 'Recordatorios de Hábitos',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#3b82f6',
-    });
-  }
-
-  return true;
 }
 
 export async function scheduleHabitReminders(habit: Habit) {
-  // Primero cancelamos las que ya existan para este hábito
-  await cancelHabitReminders(habit.id);
-
+  if (!Notifications) return;
   if (!habit.reminders || habit.reminders.length === 0) return;
 
-  const hasPermission = await requestNotificationPermissions();
-  if (!hasPermission) return;
+  try {
+    await cancelHabitReminders(habit.id);
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return;
 
-  for (const reminderTime of habit.reminders) {
-    const [hours, minutes] = reminderTime.split(':').map(Number);
-
-    try {
+    for (const reminderTime of habit.reminders) {
+      const [hours, minutes] = reminderTime.split(':').map(Number);
       await Notifications.scheduleNotificationAsync({
         content: {
           title: `¡Es hora de: ${habit.name}!`,
@@ -65,18 +74,22 @@ export async function scheduleHabitReminders(habit: Habit) {
           repeats: true,
         },
       });
-    } catch (error) {
-      console.warn('Error al programar notificación:', error);
     }
+  } catch (e) {
+    console.warn('[Notifications] Error al programar recordatorio:', e);
   }
 }
 
 export async function cancelHabitReminders(habitId: string) {
-  const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-  
-  for (const notification of scheduledNotifications) {
-    if (notification.content.data?.habitId === habitId) {
-      await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+  if (!Notifications) return;
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notification of scheduled) {
+      if (notification.content.data?.habitId === habitId) {
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+      }
     }
+  } catch (e) {
+    console.warn('[Notifications] Error al cancelar recordatorio:', e);
   }
 }

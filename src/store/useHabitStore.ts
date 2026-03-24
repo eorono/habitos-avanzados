@@ -1,29 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Habit } from '../types/habit';
 import { scheduleHabitReminders, cancelHabitReminders } from '../services/notifications';
-
-// Instancia de MMKV para el almacenamiento cifrado y rápido
-// @ts-ignore
-export const storage = new MMKV({
-  id: 'habitflow-storage',
-  // Opcional: encryptionKey: 'my-encryption-key' - Se podría derivar de una frase de paso si se requiere súper privacidad.
-});
-
-// Adaptador de Zustand para MMKV
-const zustandStorage = {
-  setItem: (name: string, value: string) => {
-    return storage.set(name, value);
-  },
-  getItem: (name: string) => {
-    const value = storage.getString(name);
-    return value ?? null;
-  },
-  removeItem: (name: string) => {
-    return storage.delete(name);
-  },
-};
 
 interface HabitStore {
   habits: Record<string, Habit>;
@@ -48,7 +27,6 @@ export const useHabitStore = create<HabitStore>()(
       updateHabit: (id, updatedFields) => {
         set((state) => {
           const updatedHabit = { ...state.habits[id], ...updatedFields };
-          // Re-programar con nuevos datos
           if (updatedFields.reminders || updatedFields.name || updatedFields.goal) {
             scheduleHabitReminders(updatedHabit);
           }
@@ -95,7 +73,7 @@ export const useHabitStore = create<HabitStore>()(
     }),
     {
       name: 'habitflow-storage',
-      storage: createJSONStorage(() => zustandStorage),
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

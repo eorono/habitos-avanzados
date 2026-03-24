@@ -5,7 +5,7 @@ import { Habit } from '../src/types/habit';
 import { useHabitStore } from '../src/store/useHabitStore';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
-import { Clock, Save } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CreateHabit() {
   const router = useRouter();
@@ -93,8 +93,8 @@ export default function CreateHabit() {
       <Text style={styles.label}>Recordatorios</Text>
       <View style={styles.remindersList}>
         {reminders.map((r, i) => (
-          <Pressable key={i} onPress={() => removeReminder(i)} style={styles.reminderChip}>
-            <Clock size={16} color="#f8fafc" style={{ marginRight: 6 }} />
+            <Pressable key={i} onPress={() => removeReminder(i)} style={styles.reminderChip}>
+            <Ionicons name="time-outline" size={16} color="#f8fafc" style={{ marginRight: 6 }} />
             <Text style={styles.reminderText}>{format(r, 'HH:mm')}</Text>
           </Pressable>
         ))}
@@ -117,7 +117,7 @@ export default function CreateHabit() {
       )}
 
       <Pressable style={styles.saveButton} onPress={handleCreate}>
-        <Save color="#fff" size={20} style={{ marginRight: 8 }} />
+        <Ionicons name="save-outline" color="#fff" size={20} style={{ marginRight: 8 }} />
         <Text style={styles.saveButtonText}>Guardar Hábito</Text>
       </Pressable>
     </ScrollView>

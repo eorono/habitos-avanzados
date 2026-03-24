@@ -4,7 +4,7 @@ import { useHabitStore } from '../../src/store/useHabitStore';
 import { calculateStreaks, getHabitInsights } from '../../src/utils/analytics';
 import { Calendar } from 'react-native-calendars';
 import { LineChart } from 'react-native-chart-kit';
-import { ArrowLeft, Trash2, Flame, Trophy, Activity, Lightbulb } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
 import { format, subDays, startOfDay } from 'date-fns';
 
@@ -17,6 +17,35 @@ export default function HabitDetail() {
 
   const habit = habits[id || ''];
 
+  const { currentStreak, bestStreak, completionRate } = useMemo(
+    () => (habit ? calculateStreaks(habit) : { currentStreak: 0, bestStreak: 0, completionRate: 0 }),
+    [habit]
+  );
+  const insights = useMemo(() => (habit ? getHabitInsights(habit) : ''), [habit]);
+
+  const markedDates = useMemo(() => {
+    const marks: Record<string, any> = {};
+    if (!habit) return marks;
+    Object.values(habit.history).forEach((h) => {
+      if (h.completed) {
+        marks[h.date] = { selected: true, selectedColor: '#10b981' };
+      }
+    });
+    return marks;
+  }, [habit]);
+
+  const chartData = useMemo(() => {
+    const labels: string[] = [];
+    const _data: number[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = subDays(new Date(), i);
+      const dateStr = format(d, 'yyyy-MM-dd');
+      labels.push(format(d, 'eeie').substring(0, 1));
+      _data.push(habit?.history[dateStr]?.completed ? 1 : 0);
+    }
+    return { labels, datasets: [{ data: _data }] };
+  }, [habit]);
+
   if (!habit) {
     return (
       <View style={styles.centerContainer}>
@@ -27,35 +56,6 @@ export default function HabitDetail() {
       </View>
     );
   }
-
-  const { currentStreak, bestStreak, completionRate } = useMemo(() => calculateStreaks(habit), [habit]);
-  const insights = useMemo(() => getHabitInsights(habit), [habit]);
-
-  const markedDates = useMemo(() => {
-    const marks: Record<string, any> = {};
-    Object.values(habit.history).forEach((h) => {
-      if (h.completed) {
-        marks[h.date] = { selected: true, selectedColor: '#10b981' };
-      }
-    });
-    return marks;
-  }, [habit.history]);
-
-  // Generate chart data (last 7 days completion)
-  const chartData = useMemo(() => {
-    const labels = [];
-    const _data = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = subDays(new Date(), i);
-      const dateStr = format(d, 'yyyy-MM-dd');
-      labels.push(format(d, 'eeie').substring(0, 1)); // Single letter day (L, M, X...)
-      _data.push(habit.history[dateStr]?.completed ? 1 : 0);
-    }
-    return {
-      labels,
-      datasets: [{ data: _data }],
-    };
-  }, [habit.history]);
 
   const handleDelete = () => {
     Alert.alert('Eliminar Hábito', '¿Estás seguro de que deseas eliminar este hábito? Se perderá todo el historial.', [
@@ -76,24 +76,24 @@ export default function HabitDetail() {
           <Text style={styles.subtitle}>{habit.goal} • {habit.frequency === 'daily' ? 'Diario' : 'Semanal'}</Text>
         </View>
         <Pressable onPress={handleDelete} style={styles.deleteBtn}>
-          <Trash2 color="#ef4444" size={24} />
+          <Ionicons name="trash-outline" color="#ef4444" size={24} />
         </Pressable>
       </View>
 
       {/* Stats Grid */}
       <View style={styles.statsGrid}>
         <View style={styles.statCard}>
-          <Flame color="#f59e0b" size={28} style={styles.statIcon} />
+          <Ionicons name="flame" color="#f59e0b" size={28} style={styles.statIcon} />
           <Text style={styles.statValue}>{currentStreak}</Text>
           <Text style={styles.statLabel}>Racha Actual</Text>
         </View>
         <View style={styles.statCard}>
-          <Trophy color="#3b82f6" size={28} style={styles.statIcon} />
+          <Ionicons name="trophy" color="#3b82f6" size={28} style={styles.statIcon} />
           <Text style={styles.statValue}>{bestStreak}</Text>
           <Text style={styles.statLabel}>Mejor Racha</Text>
         </View>
         <View style={styles.statCard}>
-          <Activity color="#10b981" size={28} style={styles.statIcon} />
+          <Ionicons name="pulse" color="#10b981" size={28} style={styles.statIcon} />
           <Text style={styles.statValue}>{Math.round(completionRate)}%</Text>
           <Text style={styles.statLabel}>Constancia</Text>
         </View>
@@ -102,7 +102,7 @@ export default function HabitDetail() {
       {/* Insights */}
       <View style={styles.insightsContainer}>
         <View style={styles.insightHeader}>
-          <Lightbulb color="#fbbf24" size={20} />
+          <Ionicons name="bulb-outline" color="#fbbf24" size={20} />
           <Text style={styles.insightTitle}>Insights de IA Local</Text>
         </View>
         <Text style={styles.insightText}>{insights}</Text>

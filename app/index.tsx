@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, FlatList, Alert } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { PlusCircle, CheckCircle, Circle, Download } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useHabitStore } from '../src/store/useHabitStore';
 import { exportHabitsData } from '../src/services/export';
 import { format, startOfDay, subDays } from 'date-fns';
@@ -32,7 +32,7 @@ export default function Home() {
         options={{
           headerRight: () => (
             <Pressable onPress={handleExport} style={styles.headerExportButton}>
-              <Download color="#f8fafc" size={24} />
+              <Ionicons name="download-outline" color="#f8fafc" size={24} />
             </Pressable>
           ),
         }}
@@ -65,9 +65,9 @@ export default function Home() {
                 {/* Check action */}
                 <Pressable onPress={() => handleToggle(item.id)} style={styles.checkButton}>
                   {isCompleted ? (
-                    <CheckCircle color="#10b981" size={32} />
+                    <Ionicons name="checkmark-circle" color="#10b981" size={32} />
                   ) : (
-                    <Circle color="#64748b" size={32} />
+                    <Ionicons name="ellipse-outline" color="#64748b" size={32} />
                   )}
                 </Pressable>
               </Pressable>
@@ -81,7 +81,7 @@ export default function Home() {
         style={styles.fab} 
         onPress={() => router.push('/create')}
       >
-        <PlusCircle color="#fff" size={32} />
+        <Ionicons name="add-circle" color="#fff" size={32} />
       </Pressable>
     </View>
   );
